@@ -8,7 +8,7 @@ require "sqlite3"
 require "benchmark"
 
 SLICE_SIZE = 10
-PATH_TO_SQL_DB = "../result.db.3"
+PATH_TO_SQL_DB = "result.db.3"
 
 p "source redis endpoint:"
 source_redis_endpoint = STDIN.noecho(&:gets).chomp
@@ -21,9 +21,6 @@ dryrun = gets.chomp == "y"
 
 source_elasticache = Redis.new(url: source_redis_endpoint)
 target_memdb = Redis::Cluster.new(nodes: [target_memorydb_endpoint] ,reconnect_attempts: 3, timeout: 0.1, slow_command_timeout: 0.1)
-
-# call RedisFullCheck
-# cmd = `../RedisFullCheck/bin/redis-full-check -s #{source_redis_endpoint} -p #{source_redis_pwd} -t #{targete_redis_endpoint} -a #{target_redis_auth} --targetdbtype=1 --comparemode=2 --comparetimes=3`
 
 count_outcomes = []
 
