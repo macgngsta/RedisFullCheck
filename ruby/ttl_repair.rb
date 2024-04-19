@@ -27,7 +27,7 @@ scanned_keys = 0
 
 p "#{Time.now} START"
 
-p Benchmark.measure do
+p(Benchmark.measure do
   loop do
     p "#{Time.now} cursor: #{cursor}"
     cursor, keys = target_memdb.scan(cursor, count: BATCH_SIZE, type: 'string')
@@ -62,7 +62,7 @@ p Benchmark.measure do
 
     break if cursor == '0'
   end
-end
+end)
 
 p ''
 p "#{Time.now} FINISHED"
