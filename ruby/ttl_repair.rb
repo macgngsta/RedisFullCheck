@@ -36,13 +36,11 @@ p(Benchmark.measure do
     # bulk get TTL of keys from memdb
     memdb_exp_values = target_memdb.pipelined do |mem_pipelined|
       keys.each do |k|
-        if mem_pipelined.respond_to?(:pexpiretime)
-          mem_pipelined.pexpiretime(k)
-        else
-          # add to skipped
-          skipped_keys << "memdb:#{k}"
-          -1
-        end
+        mem_pipelined.pexpiretime(k)
+      rescue RedisClient::CommandError
+        # add to skipped
+        skipped_keys << "memdb:#{k}"
+        -1
       end
     end
 
@@ -50,12 +48,11 @@ p(Benchmark.measure do
     e_exp_values = source_elasticache.pipelined do |ec_pipelined|
       keys.each do |k|
         # we assume that if mem db doesnt have expires, ec wont have it either
-        if ec_pipelined.respond_to?(:pexpiretime)
-          ec_pipelined.pexpiretime(k)
-        else
-          skipped_keys << "ec:#{k}"
-          -1
-        end
+
+        ec_pipelined.pexpiretime(k)
+      rescue RedisClient::CommandError
+        skipped_keys << "ec:#{k}"
+        -1
       end
     end
 
