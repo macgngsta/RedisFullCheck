@@ -10,11 +10,11 @@ require 'benchmark'
 SLICE_SIZE = 10
 PATH_TO_SQL_DB = 'result.db.3'
 
-p 'source redis endpoint:'
-source_redis_endpoint = STDIN.noecho(&:gets).chomp
+p 'source redis url (includes rediss:// and port):'
+source_redis_endpoint = $stdin.noecho(&:gets).chomp
 
-p 'target memorydb endpoint:'
-target_memorydb_endpoint = STDIN.noecho(&:gets).chomp
+p 'target memorydb url:'
+target_memorydb_endpoint = $stdin.noecho(&:gets).chomp
 
 p 'dryrun? (y/n)'
 dryrun = gets.chomp == 'y'
@@ -45,7 +45,7 @@ Benchmark.bm do |benchmark|
         # zip and flatten so in the order of 'k1', 'v1', 'k2', 'v2'
         mset_args = keys.zip(elasticache_vals).flatten
         # set memdb value as
-        memdb.mset(mset_args) unless dryrun
+        target_memdb.mset(mset_args) unless dryrun
 
         p "Repaired #{keys.size} keys"
         p ''
@@ -73,7 +73,7 @@ Benchmark.bm do |benchmark|
         set_members = source_elasticache.smembers(k)
         # remove and re-add the set members to the k
         unless dryrun
-          memdb.multi do |multi|
+          target_memdb.multi do |multi|
             multi.del(k)
             multi.sadd(k, set_members)
           end
@@ -105,7 +105,7 @@ Benchmark.bm do |benchmark|
         hval = elasticache.hgetall(k)
         # set memdb value as the hash value of k
         unless dryrun
-          memdb.multi do |multi|
+          target_memdb.multi do |multi|
             multi.del(k)
             multi.hset(k, hval)
           end
