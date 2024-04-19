@@ -53,12 +53,12 @@ p(Benchmark.measure do
       memdb_exp_values.each_with_index do |memdb_val, i|
         e_val = e_exp_values[i]
 
-        if memdb_val.is_a?(Redis::CommandError)
+        if memdb_val.is_a?(RedisClient::CommandError)
           skipped_keys << "memdb:#{keys[i]}"
           next
         end
 
-        if e_val.is_a(Redis::CommandError) || e_val == -1
+        if e_val.is_a?(RedisClient::CommandError) || e_val == -1
           skipped_keys << "ec:#{keys[i]}"
           next
         end
