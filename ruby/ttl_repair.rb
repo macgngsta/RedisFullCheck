@@ -8,11 +8,11 @@ require 'benchmark'
 BATCH_SIZE = 100
 LATENCY_BUFFER = 100
 
-p 'source redis endpoint:'
-source_redis_endpoint = STDIN.noecho(&:gets).chomp
+p 'source redis url (includes rediss:// and port):'
+source_redis_endpoint = $stdin.noecho(&:gets).chomp
 
-p 'target memorydb endpoint:'
-target_memorydb_endpoint = STDIN.noecho(&:gets).chomp
+p 'target memorydb url:'
+target_memorydb_endpoint = $stdin.noecho(&:gets).chomp
 
 p 'dryrun? (y/n)'
 dryrun = gets.chomp == 'y'
@@ -55,12 +55,12 @@ p Benchmark.measure do
 
         updated_keys << { key: keys[i], old_value: memdb_val, new_value: e_val }
       end
-
-      scanned_keys += keys.size
-      p "#{Time.now} now scanned: #{scanned_keys}!\n"
-
-      break if cursor == '0'
     end
+
+    scanned_keys += keys.size
+    p "#{Time.now} now scanned: #{scanned_keys}!\n"
+
+    break if cursor == '0'
   end
 end
 
