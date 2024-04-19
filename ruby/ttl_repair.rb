@@ -34,25 +34,17 @@ p(Benchmark.measure do
     cursor, keys = target_memdb.scan(cursor, count: BATCH_SIZE, type: 'string')
 
     # bulk get TTL of keys from memdb
-    memdb_exp_values = target_memdb.pipelined do |mem_pipelined|
+    memdb_exp_values = target_memdb.pipelined(exception: false) do |mem_pipelined|
       keys.each do |k|
         mem_pipelined.pexpiretime(k)
-      rescue RedisClient::CommandError
-        # add to skipped
-        skipped_keys << "memdb:#{k}"
-        -1
       end
     end
 
     # bulk get TTL / expiretime of keys from elasticache
-    e_exp_values = source_elasticache.pipelined do |ec_pipelined|
+    e_exp_values = source_elasticache.pipelined(exception: false) do |ec_pipelined|
       keys.each do |k|
         # we assume that if mem db doesnt have expires, ec wont have it either
-
         ec_pipelined.pexpiretime(k)
-      rescue RedisClient::CommandError
-        skipped_keys << "ec:#{k}"
-        -1
       end
     end
 
@@ -61,7 +53,15 @@ p(Benchmark.measure do
       memdb_exp_values.each_with_index do |memdb_val, i|
         e_val = e_exp_values[i]
 
-        next if e_val == -1
+        if memdb_val.is_a?(Redis::CommandError)
+          skipped_keys << "memdb:#{keys[i]}"
+          next
+        end
+
+        if e_val.is_a(Redis::CommandError) || e_val == -1
+          skipped_keys << "ec:#{keys[i]}"
+          next
+        end
 
         p "e_exp: #{e_val} memdb_exp: #{memdb_val}"
         next unless (memdb_val - e_val).abs > LATENCY_BUFFER
