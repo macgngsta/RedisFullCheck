@@ -39,7 +39,7 @@ Benchmark.bm do |benchmark|
     results.each_slice(SLICE_SIZE) do |slice|
       p "Starting repair of new slice of #{slice.size} string keys"
 
-      keys = slice.each { |r| r['key'] }
+      keys = slice.map { |r| r['key'] }
       elasticache_vals = source_elasticache.mget(*keys)
       # zip and flatten so in the order of 'k1', 'v1', 'k2', 'v2'
       mset_args = keys.zip(elasticache_vals).flatten
