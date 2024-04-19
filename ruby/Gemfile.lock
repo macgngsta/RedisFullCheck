@@ -5,15 +5,15 @@ GEM
     connection_pool (2.4.1)
     io-console (0.7.2)
     mini_portile2 (2.8.5)
-    redis (5.1.0)
-      redis-client (>= 0.17.0)
-    redis-client (0.20.0)
+    redis (5.2.0)
+      redis-client (>= 0.22.0)
+    redis-client (0.22.1)
       connection_pool
-    redis-cluster-client (0.7.5)
-      redis-client (~> 0.12)
-    redis-clustering (5.1.0)
-      redis (= 5.1.0)
-      redis-cluster-client (>= 0.7.0)
+    redis-cluster-client (0.8.2)
+      redis-client (~> 0.22)
+    redis-clustering (5.2.0)
+      redis (= 5.2.0)
+      redis-cluster-client (>= 0.7.11)
     sqlite3 (1.7.2)
       mini_portile2 (~> 2.8.0)
     sqlite3 (1.7.2-aarch64-linux)
@@ -35,7 +35,7 @@ PLATFORMS
 DEPENDENCIES
   benchmark
   io-console
-  redis (= 5.1.0)
+  redis (= 5.2.0)
   redis-clustering
   sqlite3
 
