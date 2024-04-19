@@ -33,93 +33,78 @@ Benchmark.bm do |benchmark|
 
   # 1. repair string values
   benchmark.report('Repair Strings') do
-    results = db.query "select key from key where type = 'string';"
-    if results.respond_to?(:size)
-      p "Found #{results.size} string keys to repair"
+    results = db.execute("select key from key where type = 'string'")
+    p "Found #{results.size} string keys to repair"
 
-      results.each_slice(SLICE_SIZE) do |slice|
-        p "Starting repair of new slice of #{slice.size} string keys"
+    results.each_slice(SLICE_SIZE) do |slice|
+      p "Starting repair of new slice of #{slice.size} string keys"
 
-        keys = slice.each { |r| r['key'] }
-        elasticache_vals = source_elasticache.mget(*keys)
-        # zip and flatten so in the order of 'k1', 'v1', 'k2', 'v2'
-        mset_args = keys.zip(elasticache_vals).flatten
-        # set memdb value as
-        target_memdb.mset(mset_args) unless dryrun
+      keys = slice.each { |r| r['key'] }
+      elasticache_vals = source_elasticache.mget(*keys)
+      # zip and flatten so in the order of 'k1', 'v1', 'k2', 'v2'
+      mset_args = keys.zip(elasticache_vals).flatten
+      # set memdb value as
+      target_memdb.mset(mset_args) unless dryrun
 
-        p "Repaired #{keys.size} keys"
-        p ''
-      end
-
-      p 'Finished all string keys repair'
-
-      count_outcomes.push(results.size)
-    else
-      results&.close
-      p 'No rows returned for strings'
+      p "Repaired #{keys.size} keys"
+      p ''
     end
+
+    p 'Finished all string keys repair'
+
+    count_outcomes.push(results.size)
   end
 
   # 2. repair set values
   benchmark.report('Repair Sets') do
-    set_results = db.query "select key from key where type = 'set';"
-    if set_results.respond_to?(:size)
-      p "Found #{set_results.size} set keys to repair"
+    set_results = db.execute("select key from key where type = 'set'")
+    p "Found #{set_results.size} set keys to repair"
 
-      set_results.each do |row|
-        p 'Starting repair of new set...'
+    set_results.each do |row|
+      p 'Starting repair of new set...'
 
-        k = row['key']
-        set_members = source_elasticache.smembers(k)
-        # remove and re-add the set members to the k
-        unless dryrun
-          target_memdb.multi do |multi|
-            multi.del(k)
-            multi.sadd(k, set_members)
-          end
+      k = row['key']
+      set_members = source_elasticache.smembers(k)
+      # remove and re-add the set members to the k
+      unless dryrun
+        target_memdb.multi do |multi|
+          multi.del(k)
+          multi.sadd(k, set_members)
         end
-
-        p 'Finished repair of 1 set'
-        p ''
       end
 
-      p 'Finished set keys repair'
-
-      count_outcomes.push(set_results.size)
-    else
-      set_results&.close
-      p 'No rows returned for sets'
+      p 'Finished repair of 1 set'
+      p ''
     end
+
+    p 'Finished set keys repair'
+
+    count_outcomes.push(set_results.size)
   end
 
   # 3. repair hash values
   benchmark.report('Repair Hashes') do
-    hash_results = db.query "select key from key where type = 'hash';"
-    if hash_results.respond_to?(:size)
-      p "Found #{hash_results.size} hash keys to repair"
+    hash_results = db.execute("select key from key where type = 'hash'")
+    p "Found #{hash_results.size} hash keys to repair"
 
-      hash_results.each do |row|
-        p 'Starting repair of new hash...'
+    hash_results.each do |row|
+      p 'Starting repair of new hash...'
 
-        k = row['key']
-        hval = elasticache.hgetall(k)
-        # set memdb value as the hash value of k
-        unless dryrun
-          target_memdb.multi do |multi|
-            multi.del(k)
-            multi.hset(k, hval)
-          end
+      k = row['key']
+      hval = elasticache.hgetall(k)
+      # set memdb value as the hash value of k
+      unless dryrun
+        target_memdb.multi do |multi|
+          multi.del(k)
+          multi.hset(k, hval)
         end
-
-        p 'Finished repair of hash'
-        p ''
       end
 
-      count_outcomes.push(hash_results.size)
-    else
-      hash_results&.close
-      p 'No rows returned for hashes'
+      p 'Finished repair of hash'
+      p ''
     end
+
+    count_outcomes.push(hash_results.size)
   end
 rescue SQLite3::Exception => e
   p "Error opening database: #{e}"
